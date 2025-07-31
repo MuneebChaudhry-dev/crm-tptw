@@ -7,7 +7,7 @@ const users = [
   {
     id: '1',
     email: 'admin@tptw.com',
-    password: 'admin123',
+    password: '123456',
     name: 'Admin User',
     role: 'admin',
   },
@@ -29,30 +29,37 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          const user = users.find(
+            (u) =>
+              u.email === credentials.email &&
+              u.password === credentials.password
+          );
+
+          if (user) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error('Authorize error:', error);
           return null;
         }
-
-        const user = users.find(
-          (u) =>
-            u.email === credentials.email && u.password === credentials.password
-        );
-
-        if (user) {
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          };
-        }
-
-        return null;
       },
     }),
   ],
   pages: {
     signIn: '/login',
+    error: '/login',
   },
   session: {
     strategy: 'jwt',
@@ -60,7 +67,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user?.role;
+        token.role = user.role;
       }
       return token;
     },
@@ -72,4 +79,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  debug: process.env.NODE_ENV === 'development',
 };

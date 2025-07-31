@@ -36,11 +36,11 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (!result || result?.error) {
         setError('Invalid credentials. Please try again.');
       } else {
         // Redirect to dashboard on successful login
-        router.push('/dashboard');
+        router.push('/admin/clients');
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');
