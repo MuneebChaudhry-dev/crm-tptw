@@ -1,7 +1,7 @@
 // src/components/tables/PatientsTable.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react'; // Remove useState
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,19 +14,15 @@ import {
 } from '@tanstack/react-table';
 import { Patient } from '@/types/patient';
 import {
-  ChevronDown,
   MessageSquare,
   FileText,
-  Calendar,
-  Mail,
-  Phone,
-  Filter,
-  X,
+  // Remove Calendar, Mail, Phone, Filter, X - no longer needed
 } from 'lucide-react';
 import { Button } from '@/components/ui/CustomButton/Button';
-import { Input } from '@/components/ui/CustomInput/Input';
+// Remove Input import - no longer needed
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { DISPOSITION_OPTIONS } from '@/lib/constants/dispositionOptions';
+
 const columnHelper = createColumnHelper<Patient>();
 
 interface PatientsTableProps {
@@ -34,14 +30,11 @@ interface PatientsTableProps {
 }
 
 export function PatientsTable({ data }: PatientsTableProps) {
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [emailFilter, setEmailFilter] = useState('');
-  const [phoneFilter, setPhoneFilter] = useState('');
-  const [insuranceFilter, setInsuranceFilter] = useState('');
+
 
   const columns = useMemo<ColumnDef<Patient>[]>(
     () => [
+      // ... keep all your existing column definitions unchanged ...
       columnHelper.accessor('timestamp', {
         header: 'Timestamp',
         cell: (info) => (
@@ -116,14 +109,11 @@ export function PatientsTable({ data }: PatientsTableProps) {
           const value = info.getValue();
           return (
             <div className='w-40'>
-              {' '}
-              {/* Fixed width for consistent layout */}
               <CustomSelect
                 value={value}
                 onChange={(newValue) => {
-                  // Handle disposition change
                   console.log('Disposition changed:', newValue);
-                  // You can update the data here or trigger a callback
+                  // You can dispatch actions here to update the data
                 }}
                 options={DISPOSITION_OPTIONS}
                 className='text-sm'
@@ -170,30 +160,10 @@ export function PatientsTable({ data }: PatientsTableProps) {
     []
   );
 
-  const filteredData = useMemo(() => {
-    return data.filter((patient) => {
-      const matchesDate =
-        !dateFilter ||
-        patient.timestamp.toLowerCase().includes(dateFilter.toLowerCase());
-      const matchesEmail =
-        !emailFilter ||
-        patient.clientInfo.email
-          .toLowerCase()
-          .includes(emailFilter.toLowerCase());
-      const matchesPhone =
-        !phoneFilter || patient.clientInfo.phone.includes(phoneFilter);
-      const matchesInsurance =
-        !insuranceFilter ||
-        patient.insuranceType
-          .toLowerCase()
-          .includes(insuranceFilter.toLowerCase());
-
-      return matchesDate && matchesEmail && matchesPhone && matchesInsurance;
-    });
-  }, [data, dateFilter, emailFilter, phoneFilter, insuranceFilter]);
-
+  // Remove filteredData useMemo - data is already filtered from parent
+  // Use data directly
   const table = useReactTable({
-    data: filteredData,
+    data: data, // Use the already filtered data from props
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -206,89 +176,9 @@ export function PatientsTable({ data }: PatientsTableProps) {
     },
   });
 
-  const clearAllFilters = () => {
-    setDateFilter('');
-    setEmailFilter('');
-    setPhoneFilter('');
-    setInsuranceFilter('');
-  };
-
-  const hasActiveFilters =
-    dateFilter || emailFilter || phoneFilter || insuranceFilter;
-
   return (
     <div className='w-full bg-white'>
-      {/* Filter Bar */}
-      <div className='flex items-center gap-4 p-4 bg-gray-50 border-b'>
-        <div className='flex items-center gap-2'>
-          <Calendar className='h-4 w-4 text-gray-500' />
-          <span className='text-sm font-medium'>By Date</span>
-          <Input
-            placeholder='Filter by date'
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className='w-32 h-8'
-          />
-        </div>
-
-        <div className='flex items-center gap-2'>
-          <Mail className='h-4 w-4 text-gray-500' />
-          <span className='text-sm font-medium'>By Email</span>
-          <Input
-            placeholder='Filter by email'
-            value={emailFilter}
-            onChange={(e) => setEmailFilter(e.target.value)}
-            className='w-40 h-8'
-          />
-        </div>
-
-        <div className='flex items-center gap-2'>
-          <Phone className='h-4 w-4 text-gray-500' />
-          <span className='text-sm font-medium'>By Phone No.</span>
-          <Input
-            placeholder='Filter by phone'
-            value={phoneFilter}
-            onChange={(e) => setPhoneFilter(e.target.value)}
-            className='w-32 h-8'
-          />
-        </div>
-
-        <div className='flex items-center gap-2'>
-          <Filter className='h-4 w-4 text-gray-500' />
-          <span className='text-sm font-medium'>By Insurance Type</span>
-          <select
-            value={insuranceFilter}
-            onChange={(e) => setInsuranceFilter(e.target.value)}
-            className='border border-gray-300 rounded px-2 py-1 h-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value=''>All</option>
-            <option value='Medicare'>Medicare</option>
-            <option value='Blue Cross'>Blue Cross</option>
-            <option value='Aetna'>Aetna</option>
-            <option value='Cigna'>Cigna</option>
-            <option value='United Healthcare'>United Healthcare</option>
-            <option value='Humana'>Humana</option>
-            <option value='Kaiser'>Kaiser</option>
-          </select>
-        </div>
-
-        {hasActiveFilters && (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={clearAllFilters}
-            className='flex items-center gap-1 h-8'
-          >
-            <X className='h-3 w-3' />
-            Clear All
-          </Button>
-        )}
-
-        <div className='ml-auto flex items-center gap-2'>
-          <span className='text-sm text-text-secondary'>Show 10 Records</span>
-          <input type='checkbox' className='rounded' defaultChecked />
-        </div>
-      </div>
+      {/* Remove entire Filter Bar section - it's now in the page */}
 
       {/* Table */}
       <div className='overflow-x-auto'>
@@ -312,16 +202,9 @@ export function PatientsTable({ data }: PatientsTableProps) {
               </tr>
             ))}
           </thead>
-          <tbody className=''>
+          <tbody className='divide-y divide-[#DEF1FF]'>
             {table.getRowModel().rows.map((row, index) => (
-              <tr
-                key={row.id}
-                className={`bg-[#FAFDFF] border-b border-[#DEF1FF] ${
-                  index === table.getRowModel().rows.length - 1
-                    ? 'border-b-0'
-                    : ''
-                }`}
-              >
+              <tr key={row.id} className='bg-[#FAFDFF]'>
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className='px-4 py-3'>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -333,7 +216,7 @@ export function PatientsTable({ data }: PatientsTableProps) {
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination - keep unchanged */}
       <div className='flex items-center justify-between px-4 py-3 bg-gray-50 border-t'>
         <div className='flex items-center gap-2'>
           <span className='text-sm text-gray-700'>
