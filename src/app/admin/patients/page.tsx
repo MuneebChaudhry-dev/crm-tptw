@@ -9,12 +9,10 @@ export default function PatientsPage() {
       {/* Header */}
       <div className='bg-white shadow-sm border-b'>
         <div className='flex items-center px-6 py-4'>
-          <button className='mr-4 lg:hidden'>
-            <Menu className='h-6 w-6 text-gray-600' />
+          <button className='p-2 pr-8 mr-8 hover:cursor-pointer border-r border-[#DADCE0]'>
+            <Menu className='text-[#8CA9B1]' strokeWidth={3} size={30} />
           </button>
-          <h1 className='text-2xl font-semibold text-gray-900'>
-            Patient Management
-          </h1>
+          <h1 className='text-2xl font-semibold text-gray-800'>Patients</h1>
         </div>
       </div>
 
@@ -27,3 +25,4 @@ export default function PatientsPage() {
     </div>
   );
 }
+<Menu strokeWidth={3} />;
