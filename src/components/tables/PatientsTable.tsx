@@ -27,18 +27,46 @@ const columnHelper = createColumnHelper<Patient>();
 
 interface PatientsTableProps {
   data: Patient[];
+  pagination?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+  };
+  onPageChange?: (page: number) => void;
+  onDispositionChange?: (leadId: string, dispositionStatus: string) => Promise<void>;
 }
 
-export function PatientsTable({ data }: PatientsTableProps) {
-   console.log('PatientsTable received data length:', data);
+export function PatientsTable({
+  data,
+  pagination,
+  onPageChange,
+  onDispositionChange,
+}: PatientsTableProps) {
+  console.log('PatientsTable received data length:', data);
   const columns = useMemo<ColumnDef<Patient>[]>(
     () => [
       // ... keep all your existing column definitions unchanged ...
-      columnHelper.accessor('timestamp', {
+      columnHelper.accessor('created_at', {
         header: 'Timestamp',
-        cell: (info) => (
-          <div className='text-sm text-text-secondary'>{info.getValue()}</div>
-        ),
+        cell: (info) => {
+          const date = new Date(info.getValue());
+          return (
+            <div className='text-sm text-text-secondary'>
+              {date.toLocaleDateString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric',
+              })}{' '}
+              {date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor('clientInfo', {
         header: 'Client Info',
@@ -47,22 +75,22 @@ export function PatientsTable({ data }: PatientsTableProps) {
           return (
             <div className='text-sm'>
               <div className='font-medium text-text-secondary'>
-                {client.name}
+                {client?.name}
               </div>
-              <div className='text-text-secondary'>{client.email}</div>
-              <div className='text-text-secondary'>{client.phone}</div>
+              <div className='text-text-secondary'>{client?.email}</div>
+              <div className='text-text-secondary'>{client?.phone}</div>
             </div>
           );
         },
       }),
-      columnHelper.accessor('dateOfBirth', {
+      columnHelper.accessor('dob', {
         header: 'Date of Birth',
         cell: (info) => (
           <div className='text-sm text-text-secondary'>{info.getValue()}</div>
         ),
       }),
       columnHelper.accessor(
-        (row) => `${row.insuranceType}\nMedicare ID No.\n${row.medicareIdNo}`,
+        (row) => `${row.insurance_type}\nMedicare ID No.\n${row.med_id}`,
         {
           id: 'insurance',
           header: () => (
@@ -76,10 +104,10 @@ export function PatientsTable({ data }: PatientsTableProps) {
             return (
               <div className='text-sm text-left'>
                 <div className='text-sm text-text-secondary'>
-                  {row.insuranceType}
+                  {row.insurance_type || '-'}
                 </div>
                 <div className='text-sm text-text-secondary'>
-                  {row.medicareIdNo}
+                  {row.med_id || '-'}
                 </div>
               </div>
             );
@@ -102,17 +130,21 @@ export function PatientsTable({ data }: PatientsTableProps) {
           </div>
         ),
       }),
-      columnHelper.accessor('disposition', {
+      columnHelper.accessor('disposition_status', {
         header: 'Disposition',
         cell: (info) => {
           const value = info.getValue();
+          const patient = info.row.original;
+
           return (
             <div className='w-40'>
               <CustomSelect
                 value={value}
                 onChange={(newValue) => {
-                  console.log('Disposition changed:', newValue);
-                  // You can dispatch actions here to update the data
+                  // Call the onDispositionChange prop
+                  if (onDispositionChange) {
+                    onDispositionChange(patient.id, newValue);
+                  }
                 }}
                 options={DISPOSITION_OPTIONS}
                 className='text-sm'
@@ -121,20 +153,32 @@ export function PatientsTable({ data }: PatientsTableProps) {
           );
         },
       }),
-      columnHelper.accessor('followUp', {
+      columnHelper.accessor('follow_up_date', {
         header: 'Follow Up',
         cell: (info) => {
           const value = info.getValue();
-          const isLate = value.includes('Late');
+          if (!value)
+            return <div className='text-sm text-text-secondary'>-</div>;
+
+          const followUpDate = new Date(value);
+          const today = new Date();
+          const diffTime = today.getTime() - followUpDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          const isLate = diffDays > 0;
+          const displayText = isLate
+            ? `Late by ${diffDays}D`
+            : followUpDate.toLocaleDateString();
+
           return (
             <div
               className={`inline-block px-2 py-1 rounded text-text-secondary font-medium ${
                 isLate
-                  ? 'bg-red-100  border border-[#DF0000]'
-                  : 'bg-[#FED30026]  border border-[#FED300]'
+                  ? 'bg-red-100 border border-[#DF0000]'
+                  : 'bg-[#FED30026] border border-[#FED300]'
               }`}
             >
-              {value}
+              {displayText}
             </div>
           );
         },
@@ -162,15 +206,17 @@ export function PatientsTable({ data }: PatientsTableProps) {
   // Remove filteredData useMemo - data is already filtered from parent
   // Use data directly
   const table = useReactTable({
-    data: data, // Use the already filtered data from props
+    data: data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: {
+    manualPagination: true, // Enable manual pagination
+    pageCount: pagination?.last_page || 1,
+    state: {
       pagination: {
-        pageSize: 10,
+        pageIndex: (pagination?.current_page || 1) - 1,
+        pageSize: pagination?.per_page || 10,
       },
     },
   });
@@ -221,17 +267,17 @@ export function PatientsTable({ data }: PatientsTableProps) {
         <div className='flex items-center gap-2'>
           <span className='text-sm text-gray-700'>
             Showing{' '}
-            {table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-              1}{' '}
+            {pagination
+              ? (pagination.current_page - 1) * pagination.per_page + 1
+              : 1}{' '}
             to{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              data.length // Use data.length instead of table.getFilteredRowModel().rows.length
-            )}{' '}
-            of {data.length} entries{' '}
-            {/* Use data.length instead of table.getFilteredRowModel().rows.length */}
+            {pagination
+              ? Math.min(
+                  pagination.current_page * pagination.per_page,
+                  pagination.total
+                )
+              : data.length}{' '}
+            of {pagination?.total || data.length} entries
           </span>
         </div>
 
@@ -239,22 +285,25 @@ export function PatientsTable({ data }: PatientsTableProps) {
           <Button
             variant='outline'
             size='sm'
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() =>
+              onPageChange && onPageChange((pagination?.current_page || 1) - 1)
+            }
+            disabled={!pagination?.prev_page_url}
           >
             Previous
           </Button>
 
           <span className='text-sm text-gray-700'>
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
+            Page {pagination?.current_page || 1} of {pagination?.last_page || 1}
           </span>
 
           <Button
             variant='outline'
             size='sm'
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() =>
+              onPageChange && onPageChange((pagination?.current_page || 1) + 1)
+            }
+            disabled={!pagination?.next_page_url}
           >
             Next
           </Button>

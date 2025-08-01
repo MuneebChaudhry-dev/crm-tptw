@@ -1,13 +1,14 @@
 // src/app/admin/patients/page.tsx
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PatientsTable } from '@/components/tables/PatientsTable';
-import { patientsData } from '@/data/patients';
+// import { patientsData } from '@/data/patients';
 import { Menu, Calendar, Search } from 'lucide-react';
 import { Input } from '@/components/ui/CustomInput/Input';
 import { Button } from '@/components/ui/CustomButton/Button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { leadsApi } from '@/services/api';
 import {
   setDateFilter,
   setEmailFilter,
@@ -16,68 +17,100 @@ import {
   clearAllFilters,
 } from '@/store/slices/patientsSlice';
 
+
 export default function PatientsPage() {
   const dispatch = useAppDispatch();
   const { dateFilter, emailFilter, phoneFilter, insuranceFilter } =
     useAppSelector((state) => state.patients);
 
-  // In PatientsPage, replace the filteredData useMemo with this debug version:
-  const filteredData = useMemo(() => {
-    console.log('Filtering with:', {
-      dateFilter,
-      emailFilter,
-      phoneFilter,
-      insuranceFilter,
-    });
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+const [patientsData, setPatientsData] = useState([]);
+const [pagination, setPagination] = useState(null);
+const [currentPage, setCurrentPage] = useState(1);
 
-    if (!dateFilter && !emailFilter && !phoneFilter && !insuranceFilter) {
-      console.log('No filters applied, returning all data');
-      return patientsData;
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      const data = await leadsApi.getLeads();
+      console.log('Fetched patients data:', data.data);
+      setPatientsData(data.data);
+    } catch (err) {
+      console.error('Failed to fetch patients:', err);
+      setError(err?.message);
+    } finally {
+      setLoading(false);
     }
+  };
+useEffect(() => {
+  fetchPatients(currentPage);
+}, [currentPage]);
+const handlePageChange = (page: number) => {
+  setCurrentPage(page);
+};
 
-    const filtered = patientsData.filter((patient) => {
-      const matchesDate =
-        !dateFilter ||
-        patient.timestamp.toLowerCase().includes(dateFilter.toLowerCase());
-      const matchesEmail =
-        !emailFilter ||
-        patient.clientInfo.email
-          .toLowerCase()
-          .includes(emailFilter.toLowerCase());
-      const matchesPhone =
-        !phoneFilter || patient.clientInfo.phone.includes(phoneFilter);
-      const matchesInsurance =
-        !insuranceFilter ||
-        patient.insuranceType
-          .toLowerCase()
-          .includes(insuranceFilter.toLowerCase());
+  // In PatientsPage, replace the filteredData useMemo with this debug version:
+const filteredData = useMemo(() => {
+  if (!dateFilter && !emailFilter && !phoneFilter && !insuranceFilter) {
+    return patientsData;
+  }
 
-      const matches =
-        matchesDate && matchesEmail && matchesPhone && matchesInsurance;
+  const filtered = patientsData.filter((patient) => {
+    const patientDate = new Date(patient.created_at)
+      .toISOString()
+      .split('T')[0];
+    const matchesDate = !dateFilter || patientDate === dateFilter;
 
-      if (!matches) {
-        console.log('Patient filtered out:', patient.clientInfo.name, {
-          matchesDate,
-          matchesEmail,
-          matchesPhone,
-          matchesInsurance,
-        });
-      }
+    const matchesEmail =
+      !emailFilter ||
+      patient.clientInfo.email
+        .toLowerCase()
+        .includes(emailFilter.toLowerCase());
+    const matchesPhone =
+      !phoneFilter || patient.clientInfo.phone.includes(phoneFilter);
+    const matchesInsurance =
+      !insuranceFilter ||
+      patient.insurance_type
+        .toLowerCase()
+        .includes(insuranceFilter.toLowerCase());
 
-      return matches;
-    });
+    return matchesDate && matchesEmail && matchesPhone && matchesInsurance;
+  });
 
-    console.log(
-      'Filtered results:',
-      filtered.length,
-      'out of',
-      patientsData.length
-    );
-    return filtered;
-  }, [dateFilter, emailFilter, phoneFilter, insuranceFilter]);
+  return filtered;
+}, [patientsData, dateFilter, emailFilter, phoneFilter, insuranceFilter]);
 
   const hasActiveFilters =
     dateFilter || emailFilter || phoneFilter || insuranceFilter;
+
+const handleDispositionChange = async (
+  leadId: string,
+  dispositionStatus: string
+) => {
+  try {
+    console.log('Updating disposition:', { leadId, dispositionStatus });
+
+    // Call the API to update disposition
+    await leadsApi.updateDispositionStatus(leadId, dispositionStatus);
+
+    // Update local state immediately for better UX
+    setPatientsData((prevData) =>
+      prevData.map((patient) =>
+        patient.id === leadId
+          ? { ...patient, disposition_status: dispositionStatus }
+          : patient
+      )
+    );
+
+    console.log('Disposition updated successfully');
+  } catch (error) {
+    console.error('Failed to update disposition:', error);
+    // Optionally show an error toast/notification here
+    alert('Failed to update disposition status. Please try again.');
+  }
+};
+
+
 
   return (
     <div className='min-h-screen bg-white'>
@@ -168,7 +201,12 @@ export default function PatientsPage() {
       {/* Main Content */}
       <div className='p-6'>
         <div className='bg-white rounded-lg shadow'>
-          <PatientsTable data={filteredData} />
+          <PatientsTable
+            data={filteredData}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onDispositionChange={handleDispositionChange} // Add this
+          />
         </div>
       </div>
     </div>
