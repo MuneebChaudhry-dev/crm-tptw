@@ -5,6 +5,7 @@
   --foreground: #8CA9B1;
   --heading:#1C3D5A;
   --para:#6B6E98;
+  --text-secondary:#6F6F6F;
 }
 
 @theme inline {
@@ -12,6 +13,7 @@
   --color-foreground: var(--foreground);
   --color-heading: var(--heading);
   --color-para: var(--para);
+  --color-text-secondary: var(--text-secondary);
   --font-lato: var(--font-lato);
   --font-dm-serif: var(--font-dm-serif);
 }

@@ -40,7 +40,7 @@ export default function LoginPage() {
         setError('Invalid credentials. Please try again.');
       } else {
         // Redirect to dashboard on successful login
-        router.push('/admin/clients');
+        router.push('/admin/patients');
       }
     } catch (err) {
       setError('Something went wrong. Please try again.');

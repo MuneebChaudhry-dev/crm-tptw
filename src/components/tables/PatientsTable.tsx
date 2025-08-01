@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/CustomButton/Button';
 import { Input } from '@/components/ui/CustomInput/Input';
-
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { DISPOSITION_OPTIONS } from '@/lib/constants/dispositionOptions';
 const columnHelper = createColumnHelper<Patient>();
 
 interface PatientsTableProps {
@@ -44,7 +45,7 @@ export function PatientsTable({ data }: PatientsTableProps) {
       columnHelper.accessor('timestamp', {
         header: 'Timestamp',
         cell: (info) => (
-          <div className='text-sm text-gray-700'>{info.getValue()}</div>
+          <div className='text-sm text-text-secondary'>{info.getValue()}</div>
         ),
       }),
       columnHelper.accessor('clientInfo', {
@@ -53,9 +54,11 @@ export function PatientsTable({ data }: PatientsTableProps) {
           const client = info.getValue();
           return (
             <div className='text-sm'>
-              <div className='font-medium text-gray-900'>{client.name}</div>
-              <div className='text-gray-600'>{client.email}</div>
-              <div className='text-gray-600'>{client.phone}</div>
+              <div className='font-medium text-text-secondary'>
+                {client.name}
+              </div>
+              <div className='text-text-secondary'>{client.email}</div>
+              <div className='text-text-secondary'>{client.phone}</div>
             </div>
           );
         },
@@ -63,7 +66,7 @@ export function PatientsTable({ data }: PatientsTableProps) {
       columnHelper.accessor('dateOfBirth', {
         header: 'Date of Birth',
         cell: (info) => (
-          <div className='text-sm text-gray-700'>{info.getValue()}</div>
+          <div className='text-sm text-text-secondary'>{info.getValue()}</div>
         ),
       }),
       columnHelper.accessor(
@@ -71,7 +74,7 @@ export function PatientsTable({ data }: PatientsTableProps) {
         {
           id: 'insurance',
           header: () => (
-            <div className='text-center'>
+            <div className='text-left'>
               <div>Insurance Type</div>
               <div>Medicare ID No.</div>
             </div>
@@ -79,22 +82,30 @@ export function PatientsTable({ data }: PatientsTableProps) {
           cell: (info) => {
             const row = info.row.original;
             return (
-              <div className='text-sm text-center'>
-                <div className='font-medium'>{row.insuranceType}</div>
-                <div className='text-gray-600'>{row.medicareIdNo}</div>
+              <div className='text-sm text-left'>
+                <div className='text-sm text-text-secondary'>
+                  {row.insuranceType}
+                </div>
+                <div className='text-sm text-text-secondary'>
+                  {row.medicareIdNo}
+                </div>
               </div>
             );
           },
         }
       ),
       columnHelper.accessor('message', {
-        header: 'Message',
+        header: () => (
+          <div className='text-center'>
+            <div>Message</div>
+          </div>
+        ),
         cell: (info) => (
           <div className='flex justify-center'>
             {info.getValue() ? (
-              <MessageSquare className='h-5 w-5 text-blue-500' />
+              <MessageSquare className='h-5 w-5 text-foreground cursor-pointer' />
             ) : (
-              <div className='h-5 w-5'></div>
+              <div className='h-5 w-5'> - </div>
             )}
           </div>
         ),
@@ -104,21 +115,19 @@ export function PatientsTable({ data }: PatientsTableProps) {
         cell: (info) => {
           const value = info.getValue();
           return (
-            <div className='relative'>
-              <select
+            <div className='w-40'>
+              {' '}
+              {/* Fixed width for consistent layout */}
+              <CustomSelect
                 value={value}
-                className='appearance-none bg-white border border-gray-300 rounded px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-                onChange={(e) => {
+                onChange={(newValue) => {
                   // Handle disposition change
-                  console.log('Disposition changed:', e.target.value);
+                  console.log('Disposition changed:', newValue);
+                  // You can update the data here or trigger a callback
                 }}
-              >
-                <option value='Follow Up'>Follow Up</option>
-                <option value='New Lead'>New Lead</option>
-                <option value='Late by 2D'>Late by 2D</option>
-                <option value='Late by 3D'>Late by 3D</option>
-              </select>
-              <ChevronDown className='absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
+                options={DISPOSITION_OPTIONS}
+                className='text-sm'
+              />
             </div>
           );
         },
@@ -130,10 +139,10 @@ export function PatientsTable({ data }: PatientsTableProps) {
           const isLate = value.includes('Late');
           return (
             <div
-              className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+              className={`inline-block px-2 py-1 rounded text-text-secondary font-medium ${
                 isLate
-                  ? 'bg-red-100 text-red-800 border border-red-200'
-                  : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                  ? 'bg-red-100  border border-[#DF0000]'
+                  : 'bg-[#FED30026]  border border-[#FED300]'
               }`}
             >
               {value}
@@ -142,7 +151,11 @@ export function PatientsTable({ data }: PatientsTableProps) {
         },
       }),
       columnHelper.accessor('logs', {
-        header: 'Logs',
+        header: () => (
+          <div className='text-center'>
+            <div>Logs</div>
+          </div>
+        ),
         cell: (info) => (
           <div className='flex justify-center'>
             {info.getValue() ? (
@@ -272,7 +285,7 @@ export function PatientsTable({ data }: PatientsTableProps) {
         )}
 
         <div className='ml-auto flex items-center gap-2'>
-          <span className='text-sm text-gray-600'>Show 10 Records</span>
+          <span className='text-sm text-text-secondary'>Show 10 Records</span>
           <input type='checkbox' className='rounded' defaultChecked />
         </div>
       </div>
@@ -280,13 +293,13 @@ export function PatientsTable({ data }: PatientsTableProps) {
       {/* Table */}
       <div className='overflow-x-auto'>
         <table className='w-full'>
-          <thead className='bg-slate-500 text-white'>
+          <thead className='bg-foreground text-white'>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className='px-4 py-3 text-left text-sm font-medium'
+                    className='font-bold font-lato px-3 py-3.5 text-left text-[16px] capitalize'
                   >
                     {header.isPlaceholder
                       ? null
@@ -299,11 +312,15 @@ export function PatientsTable({ data }: PatientsTableProps) {
               </tr>
             ))}
           </thead>
-          <tbody className='divide-y divide-gray-200'>
+          <tbody className=''>
             {table.getRowModel().rows.map((row, index) => (
               <tr
                 key={row.id}
-                className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                className={`bg-[#FAFDFF] border-b border-[#DEF1FF] ${
+                  index === table.getRowModel().rows.length - 1
+                    ? 'border-b-0'
+                    : ''
+                }`}
               >
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className='px-4 py-3'>
