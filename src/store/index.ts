@@ -1,10 +1,10 @@
-// src/store/index.ts
+// src/store/index.ts - Make sure this looks correct
 import { configureStore } from '@reduxjs/toolkit';
 import patientsReducer from './slices/patientsSlice';
 
 export const store = configureStore({
   reducer: {
-    patients: patientsReducer,
+    patients: patientsReducer, // Make sure this key matches what you use in useAppSelector
   },
 });
 

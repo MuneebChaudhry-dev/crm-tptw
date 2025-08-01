@@ -30,8 +30,7 @@ interface PatientsTableProps {
 }
 
 export function PatientsTable({ data }: PatientsTableProps) {
-
-
+   console.log('PatientsTable received data length:', data);
   const columns = useMemo<ColumnDef<Patient>[]>(
     () => [
       // ... keep all your existing column definitions unchanged ...
@@ -217,6 +216,7 @@ export function PatientsTable({ data }: PatientsTableProps) {
       </div>
 
       {/* Pagination - keep unchanged */}
+      {/* Pagination - FIXED VERSION */}
       <div className='flex items-center justify-between px-4 py-3 bg-gray-50 border-t'>
         <div className='flex items-center gap-2'>
           <span className='text-sm text-gray-700'>
@@ -228,9 +228,10 @@ export function PatientsTable({ data }: PatientsTableProps) {
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
                 table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              data.length // Use data.length instead of table.getFilteredRowModel().rows.length
             )}{' '}
-            of {table.getFilteredRowModel().rows.length} entries
+            of {data.length} entries{' '}
+            {/* Use data.length instead of table.getFilteredRowModel().rows.length */}
           </span>
         </div>
 

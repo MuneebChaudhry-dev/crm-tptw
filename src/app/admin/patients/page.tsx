@@ -17,36 +17,75 @@ import {
 } from '@/store/slices/patientsSlice';
 
 export default function PatientsPage() {
-const dispatch = useAppDispatch();
-const { dateFilter, emailFilter, phoneFilter, insuranceFilter } =
-  useAppSelector((state) => state.patients);
+  const dispatch = useAppDispatch();
+  const { dateFilter, emailFilter, phoneFilter, insuranceFilter } =
+    useAppSelector((state) => state.patients);
 
-const filteredData = useMemo(() => {
-  return patientsData.filter((patient) => {
-    const matchesDate =
-      !dateFilter ||
-      patient.timestamp.toLowerCase().includes(dateFilter.toLowerCase());
-    const matchesEmail =
-      !emailFilter ||
-      patient.clientInfo.email
-        .toLowerCase()
-        .includes(emailFilter.toLowerCase());
-    const matchesPhone =
-      !phoneFilter || patient.clientInfo.phone.includes(phoneFilter);
-    const matchesInsurance =
-      !insuranceFilter ||
-      patient.insuranceType
-        .toLowerCase()
-        .includes(insuranceFilter.toLowerCase());
+  // In PatientsPage, replace the filteredData useMemo with this debug version:
+  const filteredData = useMemo(() => {
+    console.log('Filtering with:', {
+      dateFilter,
+      emailFilter,
+      phoneFilter,
+      insuranceFilter,
+    });
 
-    return matchesDate && matchesEmail && matchesPhone && matchesInsurance;
-  });
-}, [dateFilter, emailFilter, phoneFilter, insuranceFilter]);
+    if (!dateFilter && !emailFilter && !phoneFilter && !insuranceFilter) {
+      console.log('No filters applied, returning all data');
+      return patientsData;
+    }
 
-const hasActiveFilters =
-  dateFilter || emailFilter || phoneFilter || insuranceFilter;
+    const filtered = patientsData.filter((patient) => {
+      const matchesDate =
+        !dateFilter ||
+        patient.timestamp.toLowerCase().includes(dateFilter.toLowerCase());
+      const matchesEmail =
+        !emailFilter ||
+        patient.clientInfo.email
+          .toLowerCase()
+          .includes(emailFilter.toLowerCase());
+      const matchesPhone =
+        !phoneFilter || patient.clientInfo.phone.includes(phoneFilter);
+      const matchesInsurance =
+        !insuranceFilter ||
+        patient.insuranceType
+          .toLowerCase()
+          .includes(insuranceFilter.toLowerCase());
 
+      const matches =
+        matchesDate && matchesEmail && matchesPhone && matchesInsurance;
 
+      if (!matches) {
+        console.log('Patient filtered out:', patient.clientInfo.name, {
+          matchesDate,
+          matchesEmail,
+          matchesPhone,
+          matchesInsurance,
+        });
+      }
+
+      return matches;
+    });
+
+    console.log(
+      'Filtered results:',
+      filtered.length,
+      'out of',
+      patientsData.length
+    );
+    return filtered;
+  }, [dateFilter, emailFilter, phoneFilter, insuranceFilter]);
+
+  const hasActiveFilters =
+    dateFilter || emailFilter || phoneFilter || insuranceFilter;
+console.log('Redux State:', {
+  dateFilter,
+  emailFilter,
+  phoneFilter,
+  insuranceFilter,
+});
+console.log('Original Data Length:', patientsData.length);
+console.log('Filtered Data Length:', filteredData.length);
   return (
     <div className='min-h-screen bg-gray-100'>
       {/* Header */}
@@ -133,7 +172,7 @@ const hasActiveFilters =
       {/* Main Content */}
       <div className='p-6'>
         <div className='bg-white rounded-lg shadow'>
-          <PatientsTable data={patientsData} />
+          <PatientsTable data={filteredData} />
         </div>
       </div>
     </div>
