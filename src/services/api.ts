@@ -41,12 +41,37 @@ export const leadsApi = {
       throw error;
     }
   },
-  updateDispositionStatus: async (leadId:number, dispositionStatus:string) => {
+  updateDispositionStatus: async (
+    leadId: string,
+    dispositionStatus: string,
+    followUpData: {
+      follow_up_message: string;
+      follow_up_date: string;
+      follow_up_time: string;
+    } = {
+      follow_up_message: '',
+      follow_up_date: '',
+      follow_up_time: ''
+    }
+  ) => {
     try {
-      const response = await apiClient.put('/leads/disposition-status', {
+      const payload = {
         lead_id: leadId,
         disposition_status: dispositionStatus,
-      });
+        
+      };
+
+      // Add follow-up data if provided
+      if (followUpData) {
+        payload.follow_up_message = followUpData.follow_up_message;
+        payload.follow_up_date = followUpData.follow_up_date;
+        payload.follow_up_time = followUpData.follow_up_time;
+      }
+
+      const response = await apiClient.post(
+        '/leads/disposition-status',
+        payload
+      );
       return response.data;
     } catch (error) {
       console.error('Error updating disposition status:', error);

@@ -7,6 +7,7 @@ import { PatientsTable } from '@/components/tables/PatientsTable';
 import { Menu, Calendar, Search } from 'lucide-react';
 import { Input } from '@/components/ui/CustomInput/Input';
 import { Button } from '@/components/ui/CustomButton/Button';
+import { FollowUpModal } from '@/components/modals/FollowUpModal';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { leadsApi } from '@/services/api';
 import {
@@ -28,6 +29,10 @@ const [error, setError] = useState(null);
 const [patientsData, setPatientsData] = useState([]);
 const [pagination, setPagination] = useState(null);
 const [currentPage, setCurrentPage] = useState(1);
+const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+const [selectedLeadId, setSelectedLeadId] = useState(null);
+const [isUpdatingDisposition, setIsUpdatingDisposition] = useState(false);
+
 
   const fetchPatients = async () => {
     try {
@@ -87,6 +92,12 @@ const handleDispositionChange = async (
   leadId: string,
   dispositionStatus: string
 ) => {
+  console.log('dispositionStatus', dispositionStatus);
+    if (dispositionStatus === 'Follow Up') {
+      setSelectedLeadId(leadId);
+      setShowFollowUpModal(true);
+      return;
+    }
   try {
     console.log('Updating disposition:', { leadId, dispositionStatus });
 
@@ -109,6 +120,46 @@ const handleDispositionChange = async (
     alert('Failed to update disposition status. Please try again.');
   }
 };
+const handleFollowUpSubmit = async (followUpData) => {
+  if (!selectedLeadId) return;
+
+  try {
+    setIsUpdatingDisposition(true);
+    console.log('Updating follow-up:', { selectedLeadId, followUpData });
+
+    await leadsApi.updateDispositionStatus(
+      selectedLeadId,
+      'Follow Up',
+      followUpData
+    );
+
+    setPatientsData((prevData) =>
+      prevData.map((patient) =>
+        patient.id === selectedLeadId
+          ? {
+              ...patient,
+              disposition_status: 'Follow Up',
+              follow_up_date: `${followUpData.date} ${followUpData.time}`,
+            }
+          : patient
+      )
+    );
+
+    console.log('Follow-up updated successfully');
+    setShowFollowUpModal(false);
+    setSelectedLeadId(null);
+  } catch (error) {
+    console.error('Failed to update follow-up:', error);
+    alert('Failed to update follow-up. Please try again.');
+  } finally {
+    setIsUpdatingDisposition(false);
+  }
+};
+const handleModalClose = () => {
+  setShowFollowUpModal(false);
+  setSelectedLeadId(null);
+};
+
 
 
 
@@ -209,6 +260,12 @@ const handleDispositionChange = async (
           />
         </div>
       </div>
+      <FollowUpModal
+        isOpen={showFollowUpModal}
+        onClose={handleModalClose}
+        onSubmit={handleFollowUpSubmit}
+        isLoading={isUpdatingDisposition}
+      />
     </div>
   );
 }
